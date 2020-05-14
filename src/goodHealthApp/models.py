@@ -4,22 +4,26 @@ from django.conf import settings
 from django.utils.timezone import now
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .util import modelUtil
+
+
+def get_upload_image_dir(instance, filename):
+    return "uploads/{mimeType}/{userid}/{file}".format(mimeType="images", userid=instance.user.username, file=filename)
 
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    id = models.ForeignKey(settings.AUTH_USER_MODEL,
-                           on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.CharField(max_length=100)
     password = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=100)
-    avatar = models.FileField(upload_to=modelUtil.get_upload_path)
+    avatar = models.ImageField(upload_to=get_upload_image_dir, null=True, blank=True)
 
     def __str__(self):  # __unicode__ for Python 2
-        return self.first_name
+        return f"{self.first_name} {self.last_name}"
+
+    class Meta:
+        unique_together = (("user", "id"),)
 
 
 @receiver(post_save, sender=User)
